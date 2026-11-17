@@ -5,6 +5,18 @@ module LogStashLogger
       formatter.tagged(*tags) { yield self }
     end
 
+    def push_tags(*tags)
+      formatter.push_tags(*tags)
+    end
+
+    def pop_tags(size = 1)
+      formatter.pop_tags(size)
+    end
+
+    def current_tags
+      formatter.current_tags
+    end
+
     def flush
       formatter.clear_tags!
       super if defined?(super)
