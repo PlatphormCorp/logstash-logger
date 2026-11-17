@@ -28,5 +28,28 @@ describe LogStashLogger do
 
       logger.info(message)
     end
+
+    it "puts pushed tags on events until they are popped" do
+      io = StringIO.new
+      logger = LogStashLogger.new(type: :io, io: io)
+
+      logger.push_tags('bar', 'baz')
+      logger.info('tagged')
+      logger.pop_tags(2)
+      logger.info('untagged')
+
+      events = io.string.lines.map { |line| JSON.parse(line) }
+      expect(events.map { |event| event['tags'] }).to eq([%w[bar baz], nil])
+    end
+
+    it "exposes the current tags" do
+      logger = LogStashLogger.new(type: :io, io: StringIO.new)
+
+      logger.push_tags('bar')
+      current_tags = logger.current_tags.dup
+      logger.pop_tags
+
+      expect(current_tags).to eq(['bar'])
+    end
   end
 end
