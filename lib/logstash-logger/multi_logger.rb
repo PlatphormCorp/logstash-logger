@@ -66,6 +66,23 @@ module LogStashLogger
     end
     private :tag_loggers
 
+    def push_tags(*tags)
+      tag_stack_loggers.map { |logger| logger.push_tags(*tags) }.first || []
+    end
+
+    def pop_tags(size = 1)
+      tag_stack_loggers.map { |logger| logger.pop_tags(size) }.first || []
+    end
+
+    def current_tags
+      tag_stack_loggers.flat_map(&:current_tags).uniq
+    end
+
+    def tag_stack_loggers
+      @loggers.select { |logger| logger.respond_to?(:push_tags) }
+    end
+    private :tag_stack_loggers
+
     # Any method not defined on standard Logger class, just send it on to anyone who will listen
     def method_missing(name, *args, &block)
       @loggers.each do |logger|

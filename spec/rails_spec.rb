@@ -108,5 +108,25 @@ describe LogStashLogger do
         ['after request', nil]
       )
     end
+
+    it "tags log lines written during a request through a multi logger" do
+      io = StringIO.new
+      logger = LogStashLogger.new(type: :multi_logger, outputs: [{ type: :io, io: io }, { type: :io, io: StringIO.new }])
+      allow(Rails).to receive(:logger).and_return(logger)
+      request_app = lambda do |_env|
+        Rails.logger.info('inside request')
+        [200, {}, ['ok']]
+      end
+
+      _status, _headers, body = Rails::Rack::Logger.new(request_app, ['request-tag']).call(Rack::MockRequest.env_for('/'))
+      body.close
+      Rails.logger.info('after request')
+
+      events = io.string.lines.map { |line| JSON.parse(line) }
+      expect(events.map { |event| [event['message'], event['tags']] }).to include(
+        ['inside request', ['request-tag']],
+        ['after request', nil]
+      )
+    end
   end
 end

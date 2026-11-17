@@ -56,4 +56,30 @@ describe LogStashLogger::MultiLogger do
       logger.info 'test'
     end
   end
+
+  it "puts pushed tags on every logger's events until they are popped" do
+    first_io = StringIO.new
+    second_io = StringIO.new
+    logger = LogStashLogger.new(type: :multi_logger, outputs: [{ type: :io, io: first_io }, { type: :io, io: second_io }])
+
+    pushed_count = logger.push_tags('tag').size
+    logger.info('tagged')
+    logger.pop_tags(pushed_count)
+    logger.info('untagged')
+
+    [first_io, second_io].each do |io|
+      events = io.string.lines.map { |line| JSON.parse(line) }
+      expect(events.map { |event| event['tags'] }).to eq([['tag'], nil])
+    end
+  end
+
+  it "exposes the current tags" do
+    logger = LogStashLogger.new(type: :multi_logger, outputs: [{ type: :io, io: StringIO.new }, { type: :io, io: StringIO.new }])
+
+    pushed_count = logger.push_tags('tag').size
+    current_tags = logger.current_tags
+    logger.pop_tags(pushed_count)
+
+    expect(current_tags).to eq(['tag'])
+  end
 end
