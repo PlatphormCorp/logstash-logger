@@ -1,3 +1,9 @@
+## 0.26.2
+
+ - Fix: Loggers respond to `push_tags`, `pop_tags` and `current_tags`. Rails
+   7.2+ `Rails::Rack::Logger` applies `config.log_tags` only through
+   `push_tags`, so request tags were silently dropped from every log line.
+
 ## 0.26.1
 
  - Fix: Support for SSL with the TCP device without an SSL context in Ruby
